@@ -1,4 +1,6 @@
+from datetime import datetime
 import asyncio
+
 
 UPDATE_INTERVAL = 0.5  # time in seconds between updates
 
@@ -9,6 +11,7 @@ class GameStateManager:
     async def update_game_state_periodically(self):
         while True:
             self.latest_game_state['state'] = self.capture_and_process_game_state()
+            self.latest_game_state['timestamp'] = datetime.utcnow().isoformat()
             await asyncio.sleep(UPDATE_INTERVAL)
 
     def capture_and_process_game_state(self):
