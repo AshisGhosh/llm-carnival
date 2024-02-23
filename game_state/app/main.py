@@ -9,7 +9,7 @@ game_state_manager = GameStateManager()
 # Example route
 @app.get("/")
 async def read_root():
-    return {"message": "Hello, FastAPI!"}
+    return {"message": "Hello, FastAPI! This is the game state server."}
 
 @app.on_event("startup")
 async def startup_event():

@@ -11,3 +11,14 @@ services:
       - ./game_state:/app
       - ./shared:/app/shared
     command: poetry run uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+  model_server:
+    build: 
+      context: .
+      dockerfile: model_server/Dockerfile
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./model_server:/app
+      - ./shared:/app/shared
+    command: poetry run uvicorn app.main:app --host 0.0.0.0 --port 8000
