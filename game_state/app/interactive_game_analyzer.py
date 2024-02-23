@@ -14,16 +14,24 @@ class InteractiveGameAnalyzer:
         self.context = []
         self.max_questions = 1
         self.questions_asked = 0
-        threading.Thread(target=self.initialize_models, daemon=True).start()        
+        threading.Thread(target=self.start_initialize_models).start()
     
-    def initialize_models(self):
+    def start_initialize_models(self):
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(self.initialize_models())
+        loop.close()
+
+    async def initialize_models(self):
         # Initialize the VQA and LLM models
         self.model_status = "Initializing models..."
         print(self.model_status)
         self.llm = HuggingFaceGPT2LLM()
+        await self.llm.initialize()
         self.model_status = "LLM initialized. Initializing VQA..."
         print(self.model_status)
         self.vqa = HuggingFaceBLIPforVQA()
+        await self.vqa.initialize()
         if self.llm and self.vqa:
             self.model_status = "LLM and VQA initialized."
             self.models_initialized = True
@@ -31,16 +39,16 @@ class InteractiveGameAnalyzer:
             self.model_status = "Error initializing models."
         print(self.model_status)
 
-    def ask_question(self, image):
+    async def ask_question(self, image):
         # Generate a question based on the current context
         prompt = self.generate_question_prompt(self.context)
-        question = self.llm.generate(prompt)
+        question = await self.llm.generate(prompt)
         print(f"Generated question: {question}")
-        return self.get_vqa_response(image, question)
+        return await self.get_vqa_response(image, question)
 
-    def get_vqa_response(self, image, question):
+    async def get_vqa_response(self, image, question):
         # Get the response from the VQA model
-        # answer = self.vqa.process_image(image, question)
+        # answer = await self.vqa.process_image(image, question)
         answer = "cheese"
         self.update_context(question, answer)
         return answer
@@ -74,7 +82,7 @@ class InteractiveGameAnalyzer:
         self.questions_asked = 0  # Reset the counter for each new screenshot
         self.context = []  # Reset the context for each new screenshot
         while self.questions_asked < self.max_questions:
-            response = self.ask_question(image)
+            response = await self.ask_question(image)
             self.questions_asked += 1
 
             if self.is_done(response):

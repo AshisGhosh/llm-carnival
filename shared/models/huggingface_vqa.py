@@ -1,9 +1,14 @@
 # shared/models/huggingface_vqa.py
+import asyncio
+
 from transformers import AutoProcessor, BlipForQuestionAnswering
 from timeit import default_timer as timer
 
 class HuggingFaceBLIPforVQA:
     def __init__(self):
+        self.initialized = False
+    
+    async def initialize(self):
         # Start the timer
         start_time = timer()
 
@@ -16,8 +21,12 @@ class HuggingFaceBLIPforVQA:
         # Stop the timer
         end_time = timer()
         print(f"HuggingFaceBLIPforVQA initialized in {end_time - start_time:.2f} seconds")
+        self.initialized = True
 
-    def process_image(self, image, text):
+    async def process_image(self, text, image):
+        if not self.initialized:
+            asyncio.run(self.initialize())
+
         # Start the timer
         start_time = timer()
 

@@ -10,6 +10,7 @@ services:
     volumes:
       - ./game_state:/app
       - ./shared:/app/shared
+      - /home/peanut/.cache/huggingface:/root/.cache/huggingface
     command: poetry run uvicorn app.main:app --host 0.0.0.0 --port 8000
 
   model_server:
@@ -21,4 +22,5 @@ services:
     volumes:
       - ./model_server:/app
       - ./shared:/app/shared
+      - /home/peanut/.cache/huggingface:/root/.cache/huggingface
     command: poetry run uvicorn app.main:app --host 0.0.0.0 --port 8000
