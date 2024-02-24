@@ -2,6 +2,8 @@ from fastapi import FastAPI
 from .game_state_manager import GameStateManager
 import asyncio
 
+from shared.utils.client_utils import check_model_server_status
+
 # Create FastAPI instance
 app = FastAPI()
 game_state_manager = GameStateManager()
@@ -18,3 +20,16 @@ async def startup_event():
 @app.get("/game_state/get_game_state")
 async def get_current_game_state():
     return game_state_manager.get_latest_game_state()
+
+@app.get("/game_state/check_model_server_status")
+async def check_model_server():
+    return {"status": await check_model_server_status()}
+
+@app.get("/game_state/analyzer/analyze_screenshot")
+async def analyze_screenshot():
+    return await game_state_manager.capture_and_process_game_state()
+
+@app.get("/game_state/analyzer/get_vqa_response")
+async def get_vqa_response(question:str):
+    image = await game_state_manager.capture_screenshot()
+    return await game_state_manager.interactive_game_analyzer.get_vqa_response(question, image)

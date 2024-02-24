@@ -1,55 +1,37 @@
 import threading
 import asyncio
 
-from shared.models.huggingface_vqa import HuggingFaceBLIPforVQA
-from shared.models.huggingface_llm import HuggingFaceGPT2LLM
-
+from shared.utils.client_utils import check_model_server_status, generate_text_gemma_2b_it, process_image_blip
 
 class InteractiveGameAnalyzer:
     def __init__(self):
-        self.llm = None
-        self.vqa = None
+        self.llm = generate_text_gemma_2b_it
+        self.vqa = process_image_blip
         self.models_initialized = False
         self.model_status = "Models not initialized. Please wait."
         self.context = []
-        self.max_questions = 1
+        self.max_questions = 5
         self.questions_asked = 0
-        threading.Thread(target=self.start_initialize_models).start()
     
-    def start_initialize_models(self):
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        loop.run_until_complete(self.initialize_models())
-        loop.close()
-
-    async def initialize_models(self):
-        # Initialize the VQA and LLM models
-        self.model_status = "Initializing models..."
-        print(self.model_status)
-        self.llm = HuggingFaceGPT2LLM()
-        await self.llm.initialize()
-        self.model_status = "LLM initialized. Initializing VQA..."
-        print(self.model_status)
-        self.vqa = HuggingFaceBLIPforVQA()
-        await self.vqa.initialize()
-        if self.llm and self.vqa:
-            self.model_status = "LLM and VQA initialized."
-            self.models_initialized = True
-        else:
-            self.model_status = "Error initializing models."
-        print(self.model_status)
-
     async def ask_question(self, image):
         # Generate a question based on the current context
         prompt = self.generate_question_prompt(self.context)
-        question = await self.llm.generate(prompt)
+        res = await self.llm(prompt=prompt)
+        if not res["success"]:
+            print(f"Error generating question: {res['text']}")
+            return False
+        question = res["text"]
         print(f"Generated question: {question}")
-        return await self.get_vqa_response(image, question)
 
-    async def get_vqa_response(self, image, question):
+        return await self.get_vqa_response(question, image)
+
+    async def get_vqa_response(self, question, image):
         # Get the response from the VQA model
-        # answer = await self.vqa.process_image(image, question)
-        answer = "cheese"
+        res = await self.vqa(question, image)
+        if not res["success"]:
+            print(f"Error getting VQA response: {res['text']}")
+            return False
+        answer = res["answer"]
         self.update_context(question, answer)
         return answer
 
@@ -57,11 +39,14 @@ class InteractiveGameAnalyzer:
         intro = "You are trying to understand a screenshot of a video game by interacting with a VQA model that can offer one-word responses."
 
         context_summary = " ".join([f"Q: {q} A: {a}" for q, a in context])
+        if context_summary:
+            context_summary = f"Here is some context: {context_summary}"
 
         questions_remaining = self.max_questions - self.questions_asked
         question_limit_info = f"You can ask {questions_remaining} more questions."
 
         prompt = f"{intro} {context_summary} {question_limit_info} What should be the next question? Or tell me if you've learned enough."
+        print(f"Generated prompt: {prompt}")
         return prompt
 
     def update_context(self, question, answer):
@@ -69,27 +54,42 @@ class InteractiveGameAnalyzer:
         print(f"Adding Q: {question} A: {answer} to context")
         self.context.append((question, answer))
     
-    def generate_summary(self, context):
+    async def generate_summary(self, context):
         # Generate a summary of the context
-        return " ".join([f"Q: {q} A: {a}" for q, a in context])
+        summary_prompt = "You are trying to understand the state of a video game. Here is a conversation about it: "
+        context = " ".join([f"Q: {q} A: {a}" for q, a in context])
+        ask_prompt = "Summarize the understanding of the state of the game given the conversation."
+        prompt = f"{summary_prompt} {context} {ask_prompt}"
+        res = await self.llm(prompt=prompt)
+        if not res["success"]:
+            print(f"Error generating summary: {res['text']}")
+            return False
+        return res["text"]
 
     async def analyze_screenshot(self, image):
         success = False
         if not self.models_initialized:
-            return success, self.model_status
+            if not await check_model_server_status():
+                print(self.model_status)
+                return success, self.model_status
+            self.models_initialized = True
         
         print("Analyzing screenshot...")
         self.questions_asked = 0  # Reset the counter for each new screenshot
         self.context = []  # Reset the context for each new screenshot
         while self.questions_asked < self.max_questions:
             response = await self.ask_question(image)
+            if not response:
+                print("Error asking question.")
+                return success, "Error asking question."
             self.questions_asked += 1
 
             if self.is_done(response):
                 break
+
         
         analysis = {}
-        analysis["summary"] = self.generate_summary(self.context)
+        analysis["summary"] = await self.generate_summary(self.context)
         analysis ["context"] = self.context
         success = True
         return success, analysis
