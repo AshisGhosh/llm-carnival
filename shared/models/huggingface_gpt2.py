@@ -1,10 +1,10 @@
-# shared/models/huggingface_llm.py
+# shared/models/huggingface_gpt2.py
 import asyncio
 
 from transformers import pipeline, set_seed
 from timeit import default_timer as timer
 
-class HuggingFaceGPT2LLM:
+class HuggingFaceGPT2:
     def __init__(self):
         self.initialized = False
     
