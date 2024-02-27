@@ -1,12 +1,13 @@
 # shared/models/huggingface_gemma_2b_it.py
+import os
 import asyncio
+from dotenv import load_dotenv
 from timeit import default_timer as timer
 
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
-from .tokens import tokens
-
-MODEL_TOKEN = tokens["hf_gemma"]
+load_dotenv()
+MODEL_TOKEN = os.getenv("HF_TOKEN_GEMMA")
 
 MAX_HISTORY = 10
 class HuggingFaceGemma2BIt:
@@ -16,7 +17,6 @@ class HuggingFaceGemma2BIt:
         self.initialized = False
         self.chat_sessions = {}
         self.chat = []
-
     
     async def initialize(self):
         # Start the timer
@@ -44,7 +44,7 @@ class HuggingFaceGemma2BIt:
             self.chat = []
     
     def get_session_chat_history(self, session_id=None):
-        if session_id is not None:
+        if session_id in self.chat_sessions.keys():
             return self.chat_sessions[session_id]
         else:
             return []
@@ -67,7 +67,7 @@ class HuggingFaceGemma2BIt:
         self.chat =  self.update_chat_history(self.chat, {"role": "user", "content": prompt})
         
         prompt = self.tokenizer.apply_chat_template(self.chat, tokenize=False, add_generation_prompt=True)
-        print(f"Prompt: {prompt}")
+        print(f"TOKENIZED Prompt: {prompt}")
 
         inputs = self.tokenizer.encode(prompt, add_special_tokens=False, return_tensors="pt")
 

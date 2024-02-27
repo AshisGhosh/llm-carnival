@@ -6,6 +6,7 @@ from shared.models.huggingface_gpt2 import HuggingFaceGPT2
 from shared.models.huggingface_vqa import HuggingFaceBLIPforVQA
 from shared.models.huggingface_mistral import HuggingFaceMistral
 from shared.models.huggingface_gemma_2b_it import HuggingFaceGemma2BIt
+from shared.models.openrouter_ai_api import OpenRouterAIAPI
 
 app = FastAPI()
 
@@ -21,8 +22,9 @@ async def startup_event():
     await app.vqa.initialize()
     # app.mistral = HuggingFaceMistral() # way too large
     # await app.mistral.initialize()
-    app.gemma_2b_it = HuggingFaceGemma2BIt()
-    await app.gemma_2b_it.initialize()
+    app.gemma_2b_it = None
+    app.openrouter = OpenRouterAIAPI()
+    await app.openrouter.initialize()
 
 @app.post("/gpt2/generate-text")
 async def generate_text_gpt2(prompt: str):
@@ -51,6 +53,9 @@ async def process_image(text: str, image: UploadFile = File(...)):
 
 @app.post("/gemma-2b-it/generate-text")
 async def generate_text_gemma_2b_it(prompt: str, session_id: Optional[str] = None):
+    if app.gemma_2b_it is None:
+        app.gemma_2b_it = HuggingFaceGemma2BIt()
+        await app.gemma_2b_it.initialize()
     print(f'Received request for gemma-2b-it with prompt: {prompt} and session_id: {session_id}')
     text = await app.gemma_2b_it.generate(prompt, session_id=session_id)
     return {"success": True, "text": text}
@@ -59,3 +64,12 @@ async def generate_text_gemma_2b_it(prompt: str, session_id: Optional[str] = Non
 async def clear_chat_history(session_id: Optional[str] = None):
     app.gemma_2b_it.clear_chat_history(session_id=session_id)
     return {"success": True, "message": "Chat history cleared."}
+
+@app.post("/dummy/generate-text")
+async def generate_text_dummy(prompt: str):
+    return {"text": f"Dummy response to prompt: {prompt}"}
+
+@app.post("/openrouter/generate-text")
+async def generate_text_openrouter(prompt: str, session_id: Optional[str] = None, model: Optional[str] = "google/gemma-7b-it:free"):
+    text = await app.openrouter.generate_text(prompt, session_id=session_id, model=model)
+    return {"success": True, "text": text}

@@ -1,27 +1,47 @@
+import os
 import io
+import uuid
+from typing import Any, Dict, Optional
+
 import httpx
 from httpx import Timeout
-from typing import Any, Dict, Optional
 from PIL import Image
 
-model_server_url = "http://model_server:8000"
-timeout_default = 5.0
+from dotenv import load_dotenv
+load_dotenv()
 
-async def post_request(url: str, params: Dict[str, Any], files: Optional[Dict[str, Any]] = None, timeout: float = timeout_default) -> Dict[str, Any]:
+from langfuse import Langfuse
+langfuse = Langfuse()
+
+MODEL_SERVER_NAME = "http://model_server:8000"
+TIMEOUT_DEFAULT = 5.0
+SESSION_ID = str(uuid.uuid4())
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+
+
+async def post_request(url: str, params: Optional[Dict[str, Any]] = None, data: Optional[Dict[str, Any]] = None, files: Optional[Dict[str, Any]] = None, headers: Optional[Dict[str, Any]] = None, timeout: float = TIMEOUT_DEFAULT) -> Dict[str, Any]:
     timeout = Timeout(timeout)
-    print(f"Sending POST request to {url} with params: {params} and timeout: {timeout}")
+    print(f"Sending POST request to {url}:")
+    print(f"    headers: {headers}")
+    print(f"    params: {params}")
+    print(f"    data: {data}")
+    print(f"    files: {files}")
+    print(f"    timeout: {timeout}")
+
     try:
         async with httpx.AsyncClient(timeout=timeout) as client:
-            response = await client.post(url, params=params, files=files)
+            response = await client.post(url, params=params, json=data, files=files, headers=headers, timeout=timeout)
             response = response.json()
             response["success"] = True
             print(f"Response: {response}")
             return response
     except httpx.ReadTimeout as e:
-        print(f"Timeout sending POST request to {url} with params: {params} and timeout: {timeout}: {e}")
+        print(
+            f"Timeout sending POST request to {url} with params: {params} and timeout: {timeout}: {e}")
         return {"success": False, "text": f"httpx.ReadTimeout: Timeout sending POST request to {url} with params: {params} and timeout: {timeout}: {e}"}
     except Exception as e:
-        print(f"Error sending POST request to {url} with params: {params} and timeout: {timeout}: {e}")
+        print(
+            f"Error sending POST request to {url} with params: {params} and timeout: {timeout}: {e}")
         return {"success": False, "text": f"Error sending POST request to {url} with params: {params} and timeout: {timeout}: {e}"}
 
 
@@ -32,17 +52,20 @@ async def get_request(url: str) -> Dict[str, Any]:
         print(f"Response: {response.json()}")
         return response.json()
 
+
 async def check_model_server_status() -> str:
     try:
-        response = await get_request(model_server_url)
+        response = await get_request(MODEL_SERVER_NAME)
         return response
     except httpx.RequestError as e:
         print("Error checking model server status:", e)
         return False
 
+
 async def generate_text_gpt2(prompt: str) -> str:
-    response = await post_request(f"{model_server_url}/gpt2/generate-text", {"prompt": prompt})
+    response = await post_request(f"{MODEL_SERVER_NAME}/gpt2/generate-text", {"prompt": prompt})
     return response
+
 
 async def process_image_blip(text: str, image: Image) -> Dict[str, Any]:
     timeout = 30.0
@@ -53,16 +76,60 @@ async def process_image_blip(text: str, image: Image) -> Dict[str, Any]:
 
     files = {'image': ('image.jpg', image_byte_array, 'image/jpeg')}
     params = {'text': text}
-    response = await post_request(f"{model_server_url}/blip/process-image", params=params, files=files, timeout=timeout)
+    response = await post_request(f"{MODEL_SERVER_NAME}/blip/process-image", params=params, files=files, timeout=timeout)
     return response
 
 
 async def generate_text_gemma_2b_it(prompt: str, session_id: str = None) -> str:
     timeout = 60.0
-    response = await post_request(f"{model_server_url}/gemma-2b-it/generate-text", {"prompt": prompt}, timeout=timeout)
+    model_url = f"{MODEL_SERVER_NAME}/gemma-2b-it/generate-text"
+    metadata={
+        "model_server_url": model_url,
+        "timeout": timeout
+    }
+
+    input = {"prompt": prompt, "session_id": session_id}
+
+    trace = langfuse.trace(
+        name="generate-text-gemma-2b-it",
+        user_id="ashis",
+        session_id=session_id,
+        input=input,
+        metadata=metadata,
+        tags=["generate-text", "gemma-2b-it"]
+    )
+    span = trace.span(
+        name="generate-text-gemma-2b-it",
+        input=input
+        )
+    generation = trace.generation(
+        name="generate-text-gemma-2b-it",
+        model="gemma-2b-it",
+        model_parameters={},
+        input=input,
+        metadata=metadata
+    )
+    response = await post_request(model_url, input, timeout=timeout)
+    span.end(
+        output=response
+    )
+    generation.end(
+        output=response
+    )
+    trace.update(
+        output=response
+    )
     return response
+
 
 async def clear_chat_history_gemma_2b_it(session_id: str = None) -> str:
-    response = await post_request(f"{model_server_url}/gemma-2b-it/clear-chat-history", {"session_id": session_id})
+    response = await post_request(f"{MODEL_SERVER_NAME}/gemma-2b-it/clear-chat-history", {"session_id": session_id})
     return response
 
+async def generate_text_dummy(prompt: str) -> str:
+    response = await post_request(f"{MODEL_SERVER_NAME}/dummy/generate-text", {"prompt": prompt})
+    return response
+
+async def generate_text_openrouter(prompt: str, session_id: str = None, model: str = "google/gemma-7b-it:free") -> str:
+    response = await post_request(f"{MODEL_SERVER_NAME}/openrouter/generate-text", {"prompt": prompt, "session_id": session_id, "model": model})
+    return response
