@@ -15,7 +15,21 @@ async def read_root():
 
 @app.on_event("startup")
 async def startup_event():
-    asyncio.create_task(game_state_manager.update_game_state_periodically())
+    pass
+
+@app.get("/game_state/update_game_state")
+async def update_game_state():
+    return await game_state_manager.update_game_state()
+
+@app.get("/game_state/start_game_state_updates")
+async def start_game_state_updates():
+    await game_state_manager.start_game_state_updates()
+    return {"message": "Game state updates started."}
+
+@app.get("/game_state/stop_game_state_updates")
+async def stop_game_state_updates():
+    await game_state_manager.stop_game_state_updates()
+    return {"message": "Game state updates stopped."}
 
 @app.get("/game_state/get_game_state")
 async def get_current_game_state():
