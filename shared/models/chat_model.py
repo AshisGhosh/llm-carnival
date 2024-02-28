@@ -23,7 +23,7 @@ class ChatModel:
         return chat
 
     def clear_chat_history(self, session_id=None):
-        if session_id is not None:
+        if session_id in self.chat_sessions.keys():
             self.chat_sessions[session_id] = []
         else:
             self.chat = []
@@ -35,7 +35,7 @@ class ChatModel:
             return []
     
     def update_session_chat_history(self, session_id, chat):
-        if session_id is not None:
+        if session_id not in [None, '']:
             self.chat_sessions[session_id] = chat
         else:
             self.chat = []

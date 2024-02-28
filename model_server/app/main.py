@@ -71,5 +71,5 @@ async def generate_text_dummy(prompt: str):
 
 @app.post("/openrouter/generate-text")
 async def generate_text_openrouter(prompt: str, session_id: Optional[str] = None, model: Optional[str] = "google/gemma-7b-it:free"):
-    text = await app.openrouter.generate_text(prompt, session_id=session_id, model=model)
-    return {"success": True, "text": text}
+    success, text = await app.openrouter.generate_text(prompt, session_id=session_id, model=model)
+    return {"success": success, "text": text}

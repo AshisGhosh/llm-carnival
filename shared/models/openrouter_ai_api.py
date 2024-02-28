@@ -41,5 +41,8 @@ class OpenRouterAIAPI(ChatModel):
 
         model_server_url = "https://openrouter.ai/api/v1/chat/completions"
         response = await post_request(model_server_url, data=data, headers=headers)
+        if "error" in response.keys():
+            print(f"Error generating text with OpenRouter AI API: {response['error']}")
+            return False, response["error"]
         generated_text = response['choices'][0]['message']['content']
-        return generated_text
+        return True, generated_text

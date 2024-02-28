@@ -3,6 +3,7 @@ import io
 import uuid
 from typing import Any, Dict, Optional
 
+import asyncio
 import httpx
 from httpx import Timeout
 from PIL import Image
@@ -25,14 +26,16 @@ async def post_request(url: str, params: Optional[Dict[str, Any]] = None, data: 
     print(f"    headers: {headers}")
     print(f"    params: {params}")
     print(f"    data: {data}")
-    print(f"    files: {files}")
+    if files:
+     print(f"    files len: {len(files)}")
     print(f"    timeout: {timeout}")
 
     try:
         async with httpx.AsyncClient(timeout=timeout) as client:
             response = await client.post(url, params=params, json=data, files=files, headers=headers, timeout=timeout)
             response = response.json()
-            response["success"] = True
+            if not "success" in response.keys():
+                response["success"] = True
             print(f"Response: {response}")
             return response
     except httpx.ReadTimeout as e:
@@ -83,42 +86,8 @@ async def process_image_blip(text: str, image: Image) -> Dict[str, Any]:
 async def generate_text_gemma_2b_it(prompt: str, session_id: str = None) -> str:
     timeout = 60.0
     model_url = f"{MODEL_SERVER_NAME}/gemma-2b-it/generate-text"
-    metadata={
-        "model_server_url": model_url,
-        "timeout": timeout
-    }
-
     input = {"prompt": prompt, "session_id": session_id}
-
-    trace = langfuse.trace(
-        name="generate-text-gemma-2b-it",
-        user_id="ashis",
-        session_id=session_id,
-        input=input,
-        metadata=metadata,
-        tags=["generate-text", "gemma-2b-it"]
-    )
-    span = trace.span(
-        name="generate-text-gemma-2b-it",
-        input=input
-        )
-    generation = trace.generation(
-        name="generate-text-gemma-2b-it",
-        model="gemma-2b-it",
-        model_parameters={},
-        input=input,
-        metadata=metadata
-    )
     response = await post_request(model_url, input, timeout=timeout)
-    span.end(
-        output=response
-    )
-    generation.end(
-        output=response
-    )
-    trace.update(
-        output=response
-    )
     return response
 
 
@@ -130,6 +99,19 @@ async def generate_text_dummy(prompt: str) -> str:
     response = await post_request(f"{MODEL_SERVER_NAME}/dummy/generate-text", {"prompt": prompt})
     return response
 
-async def generate_text_openrouter(prompt: str, session_id: str = None, model: str = "google/gemma-7b-it:free") -> str:
-    response = await post_request(f"{MODEL_SERVER_NAME}/openrouter/generate-text", {"prompt": prompt, "session_id": session_id, "model": model})
+async def generate_text_openrouter(prompt: str, session_id: str = None, model: str = "google/gemma-7b-it:free", attempts: int = 10) -> str:
+    model_url = f"{MODEL_SERVER_NAME}/openrouter/generate-text"
+    input = {"prompt": prompt, "session_id": session_id, "model": model}
+    timeout = 60.0
+    response = await post_request(model_url, input, timeout=timeout)
+    if not response["success"]:
+        if "code" in response['text'].keys() and response['text']["code"] == 429:
+            attempts -= 1
+            if attempts > 0:
+                print(f"OpenRouter API rate limit exceeded. Retrying {attempts} more times.")
+                # Wait 10 seconds before retrying
+                await asyncio.sleep(10)
+                response = await generate_text_openrouter(prompt, session_id=session_id, model=model, attempts=attempts)
+            else:
+                print(f"OpenRouter API rate limit exceeded. No more attempts.")
     return response
