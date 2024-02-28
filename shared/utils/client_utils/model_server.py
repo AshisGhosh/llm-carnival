@@ -11,9 +11,6 @@ from PIL import Image
 from dotenv import load_dotenv
 load_dotenv()
 
-from langfuse import Langfuse
-langfuse = Langfuse()
-
 MODEL_SERVER_NAME = "http://model_server:8000"
 TIMEOUT_DEFAULT = 5.0
 SESSION_ID = str(uuid.uuid4())

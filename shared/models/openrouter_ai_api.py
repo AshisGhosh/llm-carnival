@@ -1,7 +1,7 @@
 # shared/models/openrouter_ai_api.py
 import os
 
-from shared.utils.client_utils import post_request
+from shared.utils.client_utils.model_server import post_request
 from .chat_model import ChatModel
 
 from dotenv import load_dotenv
@@ -36,7 +36,6 @@ class OpenRouterAIAPI(ChatModel):
             "repetition_penalty": 1,
             "min_p": 0,
             "top_a": 0
-            
         }
 
         model_server_url = "https://openrouter.ai/api/v1/chat/completions"

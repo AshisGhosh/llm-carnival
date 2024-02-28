@@ -1,7 +1,7 @@
 import asyncio
 import uuid
 
-from shared.utils.client_utils import check_model_server_status, generate_text_gemma_2b_it, process_image_blip, generate_text_openrouter
+from shared.utils.client_utils.model_server import check_model_server_status, generate_text_gemma_2b_it, process_image_blip, generate_text_openrouter
 
 from langfuse import Langfuse
 langfuse = Langfuse()

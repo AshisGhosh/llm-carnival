@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from .game_state_manager import GameStateManager
 import asyncio
 
-from shared.utils.client_utils import check_model_server_status
+from shared.utils.client_utils.model_server import check_model_server_status
 
 # Create FastAPI instance
 app = FastAPI()
