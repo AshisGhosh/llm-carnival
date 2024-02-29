@@ -74,7 +74,7 @@ class ChatModel:
             )
         response = await self.generate(self.chat, model=model)
         if session_id:
-            generation.end(output=generated_text)
+            generation.end(output=response)
         end_time = timer()
         print(f"{self.name} - Generated text in {end_time - start_time:.2f} seconds")
         if response[0]:
