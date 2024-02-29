@@ -22,6 +22,13 @@ class StrategyNode:
         new_child = StrategyNode(self.action_decider, decision, self.depth + 1)
         self.children.append(new_child)
         return new_child
+    
+    def to_dict(self):
+        return {
+            "decision": self.decision,
+            "depth": self.depth,
+            "children": [child.to_dict() for child in self.children]
+        }
 
 # Utility function for collecting paths
 def collect_paths(node, path=None, collected_paths=None):
@@ -221,3 +228,7 @@ class ActionDecider:
             return None
         return response["text"]
     
+    def get_decision_tree(self):
+        if self.root:
+            return True, self.root.to_dict()
+        return False, "No decision tree available"
