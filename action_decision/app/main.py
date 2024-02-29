@@ -23,3 +23,7 @@ async def get_game_state():
 @app.get("/action_decision/get_decision")
 async def get_decision():
     return await action_decider.decide()
+
+@app.get("/action_decision/get_decision_tree")
+async def get_decision_tree():
+    return action_decider.get_decision_tree()

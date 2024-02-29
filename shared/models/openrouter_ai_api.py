@@ -15,6 +15,7 @@ class OpenRouterAIAPI(ChatModel):
     
     async def initialize(self):
         self.initialized = True
+        self.model = None
 
     async def generate(self, messages, model):
         print(f"Generating text with OpenRouter AI API model: {model}")

@@ -28,7 +28,7 @@ async def startup_event():
 
 @app.post("/gpt2/generate-text")
 async def generate_text_gpt2(prompt: str):
-    text = await app.gpt2.generate(prompt)
+    text = await app.gpt2.generate(prompt=prompt)
     return {"success": True, "text": text}
 
 @app.post("/blip/process-image")
@@ -57,7 +57,7 @@ async def generate_text_gemma_2b_it(prompt: str, session_id: Optional[str] = Non
         app.gemma_2b_it = HuggingFaceGemma2BIt()
         await app.gemma_2b_it.initialize()
     print(f'Received request for gemma-2b-it with prompt: {prompt} and session_id: {session_id}')
-    text = await app.gemma_2b_it.generate(prompt, session_id=session_id)
+    text = await app.gemma_2b_it.generate(prompt=prompt, session_id=session_id)
     return {"success": True, "text": text}
 
 @app.post("/gemma-2b-it/clear-chat-history")
@@ -71,5 +71,5 @@ async def generate_text_dummy(prompt: str):
 
 @app.post("/openrouter/generate-text")
 async def generate_text_openrouter(prompt: str, session_id: Optional[str] = None, model: Optional[str] = "google/gemma-7b-it:free"):
-    success, text = await app.openrouter.generate_text(prompt, session_id=session_id, model=model)
+    success, text = await app.openrouter.generate_text(prompt=prompt, session_id=session_id, model=model)
     return {"success": success, "text": text}

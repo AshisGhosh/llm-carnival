@@ -41,7 +41,9 @@ class ActionDecider:
         self.llm_name = "gemini-7b-it"
         self.last_game_state = None
         self.trace = None
+        self.session_id = None
         self.active_span = None
+        self.root = None
     
     def get_game_state(self):
         self.last_game_state = get_dummy_game_state_response()['state']
@@ -50,7 +52,7 @@ class ActionDecider:
     async def ask_llm_for_initial_decision(self):
         prompt = "Given the following summary, what is the highest level binary decision you need to make in the game?"
         prompt += f"\n{self.last_game_state['summary']}"
-        return await self.get_initial_decision(prompt=prompt, session_id=self.trace.id)
+        return await self.get_initial_decision(prompt=prompt, session_id=self.session_id)
     
     @langfuse_tracking(name="get-initial-decision", trace_id_attr="trace.id", model_attr="llm_name")
     async def get_initial_decision(self, prompt, session_id):
@@ -62,7 +64,7 @@ class ActionDecider:
     async def get_llm_response_to_explore_options(self, node):
         prompt = f"Given the following decision: {node.decision}, what are the possible options?"
         prompt += f"\n Format the response as an array of options."
-        response = await self.generate_options(prompt=prompt, session_id=self.trace.id)
+        response = await self.generate_options(prompt=prompt, session_id=self.session_id)
         if response is None:
             return None
         
@@ -157,8 +159,8 @@ class ActionDecider:
         if not self.last_game_state:
             self.get_game_state()
         
-        self.trace = start_trace("action-decision", user_id="ashis", session_id=str(uuid.uuid4()), input=self.last_game_state, metadata=None, tags=None)
-        
+        self.session_id = str(uuid.uuid4())
+        self.trace = start_trace("action-decision", user_id="ashis", session_id=self.session_id, input=self.last_game_state, metadata=None, tags=None)
         initial_decision = await self.ask_llm_for_initial_decision()
 
         span = self.trace.span(
@@ -167,9 +169,9 @@ class ActionDecider:
             )
         self.active_span = span
 
-        root = StrategyNode(self, initial_decision)
+        self.root = StrategyNode(self, initial_decision)
 
-        queue = deque([root])
+        queue = deque([self.root])
         while queue:
             current_node = queue.popleft()
             if current_node.depth >= depth_limit:
@@ -196,15 +198,15 @@ class ActionDecider:
         
         span.end(output="done")
 
-        feasible_strategies = collect_paths(root)
-        ranked_strategies = self.rank_strategies(feasible_strategies)
-        result = ranked_strategies[0] if ranked_strategies else None
-        self.trace.update(
-            output=result
-        )
-        return result
+        feasible_strategies = collect_paths(self.root)
+        ranked_strategies = await self.rank_strategies(feasible_strategies)
+        # result = ranked_strategies[0] if ranked_strategies else None
+        # self.trace.update(
+        #     output=result
+        # )
+        return ranked_strategies
 
-    def rank_strategies(self, strategies):
+    async def rank_strategies(self, strategies):
         # Constructing the prompt for ranking strategies
         prompt = "Please rank the following strategies based on their effectiveness:\n"
         for i, strategy in enumerate(strategies, 1):
@@ -212,7 +214,10 @@ class ActionDecider:
         prompt += "\nProvide your ranking."
 
         # Assuming self.generator is a function that interacts with the LLM
-        response = self.generator(prompt)
+        response = await self.llm(prompt)
         # Here, you would parse the LLM's response to extract the ranking
         # This example assumes the response is directly usable as a ranking
-        return response
+        if not response["success"]:
+            return None
+        return response["text"]
+    
