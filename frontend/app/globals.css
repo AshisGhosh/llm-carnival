@@ -30,4 +30,8 @@ body {
   .text-balance {
     text-wrap: balance;
   }
+
+  /* .svg-content {
+      @apply rounded-lg p-2 shadow;
+    } */
 }

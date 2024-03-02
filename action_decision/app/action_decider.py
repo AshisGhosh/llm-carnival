@@ -1,4 +1,6 @@
 import uuid
+import time
+import json
 from collections import deque
 
 from shared.utils.client_utils.game_state import get_game_state
@@ -13,10 +15,11 @@ langfuse = Langfuse()
 
 class StrategyNode:
     def __init__(self, action_decider, decision, depth=0):
+        self.action_decider = action_decider
         self.decision = decision
         self.children = []
         self.depth = depth
-        self.action_decider = action_decider
+        self.id = str(uuid.uuid4())
     
     def add_child(self, decision):
         new_child = StrategyNode(self.action_decider, decision, self.depth + 1)
@@ -25,10 +28,14 @@ class StrategyNode:
     
     def to_dict(self):
         return {
+            "id": self.id,
             "decision": self.decision,
             "depth": self.depth,
             "children": [child.to_dict() for child in self.children]
         }
+    
+    def __repr__(self):
+        return f"Decision: {self.decision}, Depth: {self.depth}, Children: {len(self.children)}"
 
 # Utility function for collecting paths
 def collect_paths(node, path=None, collected_paths=None):
@@ -51,6 +58,9 @@ class ActionDecider:
         self.session_id = None
         self.active_span = None
         self.root = None
+        self.current_step = None
+        self.current_node = None
+        self.start_time = None
     
     def get_game_state(self):
         self.last_game_state = get_dummy_game_state_response()['state']
@@ -167,8 +177,12 @@ class ActionDecider:
             self.get_game_state()
         
         self.session_id = str(uuid.uuid4())
+        self.current_node = StrategyNode(self, "Getting initial decision...")
+        self.current_step = "Getting initial decision..."
+        self.start_time = time.time()
         self.trace = start_trace("action-decision", user_id="ashis", session_id=self.session_id, input=self.last_game_state, metadata=None, tags=None)
         initial_decision = await self.ask_llm_for_initial_decision()
+        self.current_step = None
 
         span = self.trace.span(
             name="build-decision-tree",
@@ -180,28 +194,38 @@ class ActionDecider:
 
         queue = deque([self.root])
         while queue:
-            current_node = queue.popleft()
-            if current_node.depth >= depth_limit:
+            self.current_node = queue.popleft()
+            if self.current_node.depth >= depth_limit:
                 continue
 
             tree_span = langfuse.span(
                 trace_id=self.trace.id,
                 parent_observation_id=span.id,
                 name="explore-decision-tree",
-                input=current_node.decision
+                input=self.current_node.decision
             )
             self.active_span = tree_span
-
-            options = await self.get_llm_response_to_explore_options(current_node)
+            self.current_step = f"Generating options for {self.current_node.id} : {self.current_node.decision[:100]}..."
+            options = await self.get_llm_response_to_explore_options(self.current_node)
+            self.current_step = None
+            parent_node = self.current_node
             for option in options:
-                child_node = current_node.add_child(option)
+                child_node = self.current_node.add_child(option)
+                self.current_node = child_node
+                self.current_step = f"Checking feasibility of {child_node.id} : {str(child_node.decision)[:100]}..."
                 if await self.is_option_feasible(child_node):
                     queue.append(child_node)
                 else:
                     print(f"Option {option} is not feasible")
+                self.current_node = parent_node
+                self.current_step = None
 
             tree_span.end(output="done")
             self.active_span = span
+
+            self.current_node = None
+        
+        self.start_time = None
         
         span.end(output="done")
 
@@ -230,5 +254,21 @@ class ActionDecider:
     
     def get_decision_tree(self):
         if self.root:
-            return True, self.root.to_dict()
-        return False, "No decision tree available"
+            result = {
+                "success": True,
+                "data": {
+                    "tree": self.root.to_dict(),
+                    "current_node": self.current_node.id if self.current_node else None,
+                    "current_node_desc": repr(self.current_node) if self.current_node else None,
+                    "current_step": self.current_step if self.current_step else None,
+                    "start_time": self.start_time if self.start_time else None,
+                }
+            }
+            return result
+        return {"success": False, "error": "No decision tree available."}
+    
+    def stream_decision_tree(self):
+        while True:
+            data = json.dumps(self.get_decision_tree())  # Ensures JSON format
+            yield f"data: {data}\n\n"
+            time.sleep(1)

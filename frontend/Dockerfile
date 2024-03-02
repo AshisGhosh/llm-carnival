@@ -12,14 +12,19 @@ RUN npm install -g npm@latest
 
 # Install project dependencies
 RUN npm install
+RUN npm install --save-dev @types/d3
+
 
 # Expose the port Next.js runs on, can be uncommented for production
-# EXPOSE 3000
+EXPOSE 3000
 
 # Copy the rest of your project's files into the container
 # In development, this is handled by Docker Compose volumes
-# COPY . .
+COPY . .
 
 # Command to start the Next.js development server, specified in docker-compose.yml for development
 # In production, you might use "npm run start" or "npm run build && npm run start"
 # CMD ["npm", "run", "dev"]
+
+RUN npm run build
+CMD ["npm", "run", "start"]
