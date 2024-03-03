@@ -11,7 +11,7 @@ const useSSE = (url: string, callback: (data: any) => void) => {
           };
   
           eventSource.onmessage = (event) => {
-              console.log('SSE message received', event.data);
+            //   console.log('SSE message received', event.data);
               const data = JSON.parse(event.data);
               callback(data);
           };

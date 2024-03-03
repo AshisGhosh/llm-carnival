@@ -1,16 +1,13 @@
 import React, { useState, useCallback } from 'react';
 import useSSE from '@/app/lib/use-sse';
-import { D3Node } from '@/app/lib/definitions';
-import transformTreeForD3 from '@/app/lib/transform-data-for-d3';
-import DecisionTree from './decision-tree';
 
-export default function StreamDecisionTree() {
-  const [data, setData] = useState<D3Node | null>(null);
+export default function StreamDecisionTreeCurrentStep() {
+  const [data, setData] = useState(null);
 
   const handleNewData = useCallback((newData: any) => {
     if (newData["success"]){
-      const transformedData = transformTreeForD3(newData['data']); // Adjust based on your actual data structure
-      setData(transformedData);
+      // console.log(newData["data"]["current_step"]);  // Log the data for debugging (optional
+      setData(newData["data"]["current_step"]); // Update the state with the new data
     }
   }, []); // Empty dependency array means this callback never changes
 
@@ -19,7 +16,7 @@ export default function StreamDecisionTree() {
   return (
     <div>
       <pre className="whitespace-pre-wrap p-4 max-w-8xl mx-auto my-8 bg-white rounded-lg shadow-lg border border-gray-200 overflow-auto overflow-x-auto">
-            {data && <DecisionTree data={data}/>}
+            {data && data}
       </pre>  
     </div>
   );

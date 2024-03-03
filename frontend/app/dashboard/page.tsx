@@ -3,6 +3,8 @@ import { useState } from 'react';
 import useGetDecision from '@/app/hooks/use-get-decision';
 import StreamDecisionTreeJSON from '@/app/ui/stream-decision-tree-json';
 import StreamDecisionTree from '@/app/ui/stream-decision-tree';
+import StreamDecisionTreeCurrentStep from '@/app/ui/stream-decision-tree-current-step';
+import TimeSince from '@/app/ui/time-since';
 
 const Dashboard = () => {
   const [showJsonData, setShowJsonData] = useState<boolean>(false);
@@ -45,7 +47,8 @@ const Dashboard = () => {
             Hide Data
           </button>
         }
-
+        <StreamDecisionTreeCurrentStep />
+        <TimeSince />
         {showJsonData && <StreamDecisionTreeJSON/>}
       </div>
 

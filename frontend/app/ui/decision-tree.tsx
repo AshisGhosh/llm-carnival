@@ -15,7 +15,7 @@ const DecisionTree: React.FC<DecisionTreeProps> = ({ data }) => {
   const drawTree = (width: number, height: number) => {
     if (!data || !d3Container.current) return;
 
-    const margin = { top: 20, right: 120, bottom: 30, left: 180 };
+    const margin = { top: 20, right: 150, bottom: 20, left: 180 };
     const adjustedWidth = width - margin.left - margin.right;
     const adjustedHeight = height - margin.top - margin.bottom;
 
@@ -54,30 +54,25 @@ const DecisionTree: React.FC<DecisionTreeProps> = ({ data }) => {
         .attr('class', (d: HierarchyPointNode<D3Node>) => `node ${d.children ? ' node--internal' : ' node--leaf'}`)
         .attr('transform', (d: HierarchyPointNode<D3Node>) => `translate(${d.y},${d.x})`);
 
-    // node.append('circle')
-    //     .attr('r', 10);
     
-    const charsPerRow = 22
-    const rowHeight = 28 // Adjust based on your font size and line-height
+    const charsPerRow = 25;
+    const rowHeight = 28; // Adjust based on your font size and line-height
+    const padding = 8;
     node.append('foreignObject')
-      .attr('class', 'svg-content') // Add a class
-      .attr('class', 'text-white bg-black rounded-lg p-2 shadow') // Add a class
-      .attr('width', 200) // Set a fixed width for text wrapping
+      .attr('class', d => `${d.data.is_current_node ? 'text-white bg-red-500' : 'text-white bg-black'} rounded-lg p-2 shadow`) // Add a class
+      .attr('width', 300) // Set a fixed width for text wrapping
       .attr('height', d => {
         const textLength = d.data.name.length;
         const numRows = Math.ceil(textLength / charsPerRow);
-        const padding = 4; // Add some padding
         return numRows * rowHeight + padding; // Total height based on text length
       })
-      .attr('x', -100) // Adjust based on text length
+      .attr('x', -150) // Adjust based on text length
       .attr('y', d => {
         const textLength = d.data.name.length;
         const numRows = Math.ceil(textLength / charsPerRow);
-        const padding = 4; // Add some padding
         return -(numRows * rowHeight + padding) / 2; // Center the text vertically
       })
-      .html(d => `${d.data.name}`); // Your HTML content
-    
+      .html(d => `${d.data.name}`); // Your HTML content    
   };
 
   useEffect(() => {
@@ -114,7 +109,7 @@ const DecisionTree: React.FC<DecisionTreeProps> = ({ data }) => {
   }, []); // Only on initial mount
 
   return (
-    <div ref={containerRef} style={{ width: '100%', height: '100%', maxHeight: '1000px', overflow: 'auto' }}>
+    <div ref={containerRef} style={{ width: '75%', height: '100%', maxHeight: '1000px' }}>
       <svg ref={d3Container} width="100%" height="100%" />
     </div>
   );

@@ -61,6 +61,7 @@ class ActionDecider:
         self.current_step = None
         self.current_node = None
         self.start_time = None
+        self.end_time = None
     
     def get_game_state(self):
         self.last_game_state = get_dummy_game_state_response()['state']
@@ -179,6 +180,7 @@ class ActionDecider:
         self.session_id = str(uuid.uuid4())
         self.current_node = StrategyNode(self, "Getting initial decision...")
         self.current_step = "Getting initial decision..."
+        self.end_time = None
         self.start_time = time.time()
         self.trace = start_trace("action-decision", user_id="ashis", session_id=self.session_id, input=self.last_game_state, metadata=None, tags=None)
         initial_decision = await self.ask_llm_for_initial_decision()
@@ -209,23 +211,26 @@ class ActionDecider:
             options = await self.get_llm_response_to_explore_options(self.current_node)
             self.current_step = None
             parent_node = self.current_node
-            for option in options:
-                child_node = self.current_node.add_child(option)
-                self.current_node = child_node
-                self.current_step = f"Checking feasibility of {child_node.id} : {str(child_node.decision)[:100]}..."
-                if await self.is_option_feasible(child_node):
-                    queue.append(child_node)
-                else:
-                    print(f"Option {option} is not feasible")
-                self.current_node = parent_node
-                self.current_step = None
+            if options is not None:
+                for option in options:
+                    child_node = self.current_node.add_child(option)
+                    self.current_node = child_node
+                    self.current_step = f"Checking feasibility of {child_node.id} : {str(child_node.decision)[:100]}..."
+                    if await self.is_option_feasible(child_node):
+                        queue.append(child_node)
+                    else:
+                        print(f"Option {option} is not feasible")
+                    self.current_node = parent_node
+                    self.current_step = None
 
             tree_span.end(output="done")
             self.active_span = span
 
             self.current_node = None
         
-        self.start_time = None
+        self.current_step = "Done. Ranking strategies..."
+        
+        self.end_time = time.time()
         
         span.end(output="done")
 
@@ -235,6 +240,7 @@ class ActionDecider:
         # self.trace.update(
         #     output=result
         # )
+        self.current_step = ranked_strategies
         return ranked_strategies
 
     async def rank_strategies(self, strategies):
@@ -258,10 +264,11 @@ class ActionDecider:
                 "success": True,
                 "data": {
                     "tree": self.root.to_dict(),
-                    "current_node": self.current_node.id if self.current_node else None,
+                    "current_node_id": self.current_node.id if self.current_node else None,
                     "current_node_desc": repr(self.current_node) if self.current_node else None,
                     "current_step": self.current_step if self.current_step else None,
                     "start_time": self.start_time if self.start_time else None,
+                    "end_time": self.end_time if self.end_time else None,
                 }
             }
             return result
@@ -271,4 +278,4 @@ class ActionDecider:
         while True:
             data = json.dumps(self.get_decision_tree())  # Ensures JSON format
             yield f"data: {data}\n\n"
-            time.sleep(1)
+            time.sleep(0.2)

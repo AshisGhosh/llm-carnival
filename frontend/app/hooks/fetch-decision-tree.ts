@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { DecisionNode, D3Node } from '@/app/lib/definitions';
-import transformDataForD3 from '@/app/lib/transform-data-for-d3';
+import { D3Node } from '@/app/lib/definitions';
+import transformTreeforD3 from '@/app/lib/transform-data-for-d3';
 
 const api_url = 'http://localhost:8002/action_decision/get_decision_tree';
 
@@ -17,7 +17,7 @@ const useFetchDecisionTree = () => {
       if (!response.ok) throw new Error('Network response was not ok');
       const treeData = await response.json();
       if (!treeData['data']) throw new Error('No data');
-      const transformedData = transformDataForD3(treeData['data']['tree']); // Adjust based on your actual data structure
+      const transformedData = transformTreeforD3(treeData['data']); // Adjust based on your actual data structure
       setData(transformedData);
     } catch (error) {
       if (error instanceof Error) setError(error);
