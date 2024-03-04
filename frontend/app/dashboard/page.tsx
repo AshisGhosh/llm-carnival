@@ -1,17 +1,14 @@
 'use client';
 import { useState } from 'react';
-import useGetDecision from '@/app/hooks/use-get-decision';
 import StreamDecisionTreeJSON from '@/app/ui/stream-decision-tree-json';
 import StreamDecisionTree from '@/app/ui/stream-decision-tree';
 import StreamDecisionTreeCurrentStep from '@/app/ui/stream-decision-tree-current-step';
-import TimeSince from '@/app/ui/time-since';
 import { GameState } from '@/app/ui/game-state';
 import GetDecisionButton from '@/app/ui/get-decision-button';
+import StreamGameAnalyzerStatus from '@/app/ui/stream-game-analyzer-status';
 
 const Dashboard = () => {
   const [showJsonData, setShowJsonData] = useState<boolean>(false);
-
-  const { loading, getDecision } = useGetDecision();
 
   const hideData = () => {
     setShowJsonData(false);
@@ -27,6 +24,7 @@ const Dashboard = () => {
 
       <div className="mb-4">
         <GameState />
+        <StreamGameAnalyzerStatus />
         <GetDecisionButton />
         {!showJsonData && 
           <button
@@ -45,7 +43,6 @@ const Dashboard = () => {
           </button>
         }
         <StreamDecisionTreeCurrentStep />
-        <TimeSince />
         {showJsonData && <StreamDecisionTreeJSON/>}
       </div>
 

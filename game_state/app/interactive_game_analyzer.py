@@ -1,5 +1,7 @@
 import asyncio
 import uuid
+import time
+import json
 
 from shared.utils.client_utils.model_server import check_model_server_status, generate_text_gemma_2b_it, process_image_blip, generate_text_openrouter
 
@@ -21,11 +23,14 @@ class InteractiveGameAnalyzer:
         self.trace_id = None
         self.span_id = None
         self.error_message = None
+        self.analyzer_status = None
+        self.start_time = None
+        self.end_time = None
     
     async def ask_question(self, image):
         # Generate a question based on the current context
         prompt = self.generate_question_prompt(self.context)
-        
+        self.analyzer_status += "\nGenerating question..."
         question = await self.generate_question(prompt)
         if not question:
             return False
@@ -36,6 +41,7 @@ class InteractiveGameAnalyzer:
         if not question:
             return False
         
+        self.analyzer_status += f"\n\nAsking: {question}"
         return await self.get_vqa_response(question, image)
 
     async def get_vqa_response(self, question, image):
@@ -63,6 +69,7 @@ class InteractiveGameAnalyzer:
             return False
         answer = res["answer"]
         self.update_context(question, answer)
+        self.analyzer_status += f"\n - Answer: {answer}"
         return answer
 
     def generate_question_prompt(self, context):
@@ -146,7 +153,7 @@ class InteractiveGameAnalyzer:
     async def generate_summary(self, context, session_id=None):
         # Generate a summary of the context
         nl = "\n"
-        summary_prompt = "Read the following converation and return just the salient points about the game."
+        summary_prompt = "Read the following converation and return a detailed summary about the game."
         context_descriptor = "Here is a conversation about it in a format of `Questions` and `Answers`:"
         context = f"{nl}".join([f"Question: {q} Answer: {a}" for q, a in context])
         prompt = f"{summary_prompt} {context_descriptor} {context}"
@@ -177,6 +184,9 @@ class InteractiveGameAnalyzer:
                 return success, self.model_status
             self.models_initialized = True
         
+        self.end_time = None
+        self.start_time = time.time()
+        self.analyzer_status = "Analyzing screenshot..."
         print("Analyzing screenshot...")
         self.trace_id = uuid.uuid4().hex
         self.image_name = "screenshot"
@@ -203,6 +213,7 @@ class InteractiveGameAnalyzer:
                 input=input
                 )
             self.span_id = span.id
+            self.analyzer_status = f"Asking question... {self.questions_asked + 1}/{self.max_questions}"
             response = await self.ask_question(image)
             if not response:
                 error_message = f"Error asking question: {self.error_message}"
@@ -213,6 +224,7 @@ class InteractiveGameAnalyzer:
                 trace.update(
                     output=error_message
                 )
+                self.end_time = time.time()
                 return success, error_message
             span.end(
                 output=self.context
@@ -222,19 +234,22 @@ class InteractiveGameAnalyzer:
 
             if self.is_done(response):
                 break
-
+        
         success = True
         analysis = {}
+        self.analyzer_status = "Generating summary..."
         analysis["summary"] = await self.generate_summary(self.context)
         if not analysis["summary"]:
             error_message = f"Error generating summary: {self.error_message}"
             success = False
 
+        self.analyzer_status = f"Summary: {analysis['summary'][:100]}...{analysis['summary'][-100:]}"
         analysis ["context"] = self.context
         trace.update(
             output=analysis
         )
-       
+
+        self.end_time = time.time()
         return success, analysis
 
     def is_done(self, response):
@@ -243,4 +258,15 @@ class InteractiveGameAnalyzer:
         if 'LEARNED_ENOUGH' in response:
             print("Learned enough.")
         return 'LEARNED_ENOUGH' in response
-
+    
+    def stream_status(self):
+        # Stream the status of the game_analyzer
+        while True:
+            status = {
+                "analyzer_status": self.analyzer_status,
+                "start_time": self.start_time,
+                "end_time": self.end_time
+            }
+            data = json.dumps(status)
+            yield f"data: {data}\n\n"
+            time.sleep(0.2)

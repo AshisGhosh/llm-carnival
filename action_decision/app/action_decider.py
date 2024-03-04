@@ -67,7 +67,7 @@ class ActionDecider:
         return self.last_game_state
         
     async def ask_llm_for_initial_decision(self):
-        prompt = "Given the following summary, what is the highest level binary decision you need to make in the game?"
+        prompt = "Given the following summary, what is the highest level decision you need to make in the game?"
         prompt += f"\n{self.last_game_state['summary']}"
         return await self.get_initial_decision(prompt=prompt, session_id=self.session_id)
     
@@ -173,8 +173,7 @@ class ActionDecider:
         return response["text"]
 
     async def decide(self, depth_limit=2):
-        if not self.last_game_state:
-            self.get_game_state()
+        await self.get_game_state()
         
         self.session_id = str(uuid.uuid4())
         self.current_node = StrategyNode(self, "Getting initial decision...")
