@@ -29,7 +29,7 @@ export default function GetDecisionButton() {
           disabled={loading}
           className={`${loading ? 'bg-gray-500 hover:bg-gray-300 cursor-not-allowed' : 'bg-green-500 hover:bg-green-700'} text-white font-bold py-2 px-4 rounded`}
         >
-          {loading ? "Loading..." : "Get Decision"}
+          {loading ? "Loading..." : "Get Decision"} 
         </button>
     );
 }

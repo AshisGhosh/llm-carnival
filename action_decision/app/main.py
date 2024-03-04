@@ -36,7 +36,7 @@ async def startup_event():
 
 @app.get("/action_decision/get_game_state")
 async def get_game_state():
-    return action_decider.get_game_state()
+    return await action_decider.get_game_state()
 
 @app.get("/action_decision/get_decision")
 async def get_decision():

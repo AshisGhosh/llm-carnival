@@ -5,6 +5,8 @@ import StreamDecisionTreeJSON from '@/app/ui/stream-decision-tree-json';
 import StreamDecisionTree from '@/app/ui/stream-decision-tree';
 import StreamDecisionTreeCurrentStep from '@/app/ui/stream-decision-tree-current-step';
 import TimeSince from '@/app/ui/time-since';
+import { GameState } from '@/app/ui/game-state';
+import GetDecisionButton from '@/app/ui/get-decision-button';
 
 const Dashboard = () => {
   const [showJsonData, setShowJsonData] = useState<boolean>(false);
@@ -24,13 +26,8 @@ const Dashboard = () => {
       <h1 className="text-center text-xl mb-4">Dashboard</h1>
 
       <div className="mb-4">
-        <button
-          onClick={getDecision}
-          disabled={loading}
-          className={`${loading ? 'bg-gray-500 hover:bg-gray-300 cursor-not-allowed' : 'bg-green-500 hover:bg-green-700'} text-white font-bold py-2 px-4 rounded`}
-        >
-          {loading ? "Loading..." : "Get Decision"}
-        </button>
+        <GameState />
+        <GetDecisionButton />
         {!showJsonData && 
           <button
             onClick={showData}

@@ -8,8 +8,6 @@ from shared.utils.client_utils.model_server import generate_text_openrouter
 from shared.utils.observe_utils import langfuse_tracking, start_trace
 from shared.utils.python_exec_utils import extract_retry
 
-from shared.tests.test_responses import get_dummy_game_state_response
-
 from langfuse import Langfuse
 langfuse = Langfuse()
 
@@ -63,8 +61,9 @@ class ActionDecider:
         self.start_time = None
         self.end_time = None
     
-    def get_game_state(self):
-        self.last_game_state = get_dummy_game_state_response()['state']
+    async def get_game_state(self):
+        game_state = await get_game_state()
+        self.last_game_state = game_state['state']
         return self.last_game_state
         
     async def ask_llm_for_initial_decision(self):
