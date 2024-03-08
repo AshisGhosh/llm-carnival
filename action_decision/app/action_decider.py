@@ -41,10 +41,13 @@ def collect_paths(node, path=None, collected_paths=None):
         collected_paths = []
     if path is None:
         path = []
-    if not node.children:
-        collected_paths.append(path + [node.decision])
     for child in node.children:
-        collect_paths(child, path + [node.decision], collected_paths)
+        new_path = path.copy()
+        new_path.append(child.decision)  # Add child's decision to path
+        if not child.children:
+            collected_paths.append(new_path)  # If leaf node, add path to collected_paths
+        else:
+            collect_paths(child, new_path, collected_paths)  # Recurse into children
     return collected_paths
 
 class ActionDecider:
@@ -232,7 +235,9 @@ class ActionDecider:
         
         span.end(output="done")
 
-        feasible_strategies = collect_paths(self.root)
+        feasible_strategies = []
+        for child in self.root.children:
+            feasible_strategies.extend(collect_paths(child))
         ranked_strategies = await self.rank_strategies(feasible_strategies)
         # result = ranked_strategies[0] if ranked_strategies else None
         # self.trace.update(

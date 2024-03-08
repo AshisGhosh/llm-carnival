@@ -1,7 +1,9 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import StreamingResponse
+import io
 import asyncio
+from PIL import Image
 
 from .game_state_manager import GameStateManager
 
@@ -69,3 +71,21 @@ async def get_vqa_response(question:str):
 @app.get("/game_state/stream_analyzer_status")
 async def stream_analyzer_status():
     return StreamingResponse(game_state_manager.interactive_game_analyzer.stream_status(), media_type="text/event-stream")
+
+@app.post("/game_state/update_image")
+async def update_image(image: UploadFile = File(...)):
+     # Read the image file in memory
+    image_data = await image.read()
+    
+    # Convert the image data to a PIL Image
+    image = Image.open(io.BytesIO(image_data))
+    
+    return game_state_manager.update_image(image)
+
+@app.get("/game_state/get_image")
+async def get_image():
+    image = game_state_manager.get_image()
+    img_io = io.BytesIO()
+    image.save(img_io, 'JPEG')  # Adjust format as necessary
+    img_io.seek(0)
+    return StreamingResponse(img_io, media_type="image/jpeg")

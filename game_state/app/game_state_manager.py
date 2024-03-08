@@ -12,6 +12,7 @@ class GameStateManager:
         self.initialize_game_state()
         self.interactive_game_analyzer = InteractiveGameAnalyzer()
         self.update_game_state_periodically_flag = False
+        self.image = None
         print("GameStateManager initialized")
     
     def initialize_game_state(self):
@@ -23,12 +24,21 @@ class GameStateManager:
         }
     
     async def update_game_state(self):
-        success, state = await self.capture_and_process_game_state()
+        success, state = await self.get_image_and_process_game_state()
         self.latest_game_state['success'] = success
         self.latest_game_state['state'] = state
         self.latest_game_state['state_timestamp'] = datetime.utcnow().isoformat()
         self.latest_game_state['timestamp'] = datetime.utcnow().isoformat()
         return self.latest_game_state
+
+    def update_image(self, image):
+        self.image = image
+        return "ok"
+    
+    def get_image(self):
+        if self.image:
+            return self.image
+        return load_image('ffxiv1.jpg') 
 
     async def start_game_state_updates(self):
         self.update_game_state_periodically_flag = True
@@ -42,14 +52,10 @@ class GameStateManager:
             await self.update_game_state()
             await asyncio.sleep(UPDATE_INTERVAL)
 
-    async def capture_and_process_game_state(self):
-        screenshot = await self.capture_screenshot()
+    async def get_image_and_process_game_state(self):
+        screenshot = self.get_image()
         success, state =  await self.process_screenshot(screenshot)
         return success, state
-
-    async def capture_screenshot(self):
-        print("Capturing screenshot...")
-        return load_image('ffxiv1.jpg')  # Replace with capture_screenshot()
 
     async def process_screenshot(self, image):
         # Implementation to process the screenshot

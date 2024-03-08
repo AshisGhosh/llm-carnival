@@ -6,6 +6,7 @@ import StreamDecisionTreeCurrentStep from '@/app/ui/stream-decision-tree-current
 import { GameState } from '@/app/ui/game-state';
 import GetDecisionButton from '@/app/ui/get-decision-button';
 import StreamGameAnalyzerStatus from '@/app/ui/stream-game-analyzer-status';
+import ImageHandler from '@/app/ui/image-handler';
 
 const Dashboard = () => {
   const [showJsonData, setShowJsonData] = useState<boolean>(false);
@@ -23,6 +24,7 @@ const Dashboard = () => {
       <h1 className="text-center text-xl mb-4">Dashboard</h1>
 
       <div className="mb-4">
+        <ImageHandler />
         <GameState />
         <StreamGameAnalyzerStatus />
         <GetDecisionButton />
