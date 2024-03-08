@@ -4,6 +4,18 @@ Building a decision making agent via scene understanding with iteratively compos
 In this iteration, the use case is geared towards video games but the project has been inspired by robot planning and execution in physical, real-world scenarios.
 
 
+#### Screenshot gets loaded into game state analyzer
+
+![Screenshot gets loaded into game state analyzer](assets/game-state-vid.gif "Screenshot gets loaded into game state analyzer")
+
+#### Decision engine acts on summary of game state
+
+![Decision engine acts on summary of game state](assets/decision-vid.gif "Decision engine acts on summary of game state")
+
+
+
+
+
 ## Overview
 
 This project takes a microservices approach where each microservice is isolated in it's own docker container while providing FastAPI endpoints. 
