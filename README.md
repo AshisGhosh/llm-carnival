@@ -4,17 +4,6 @@ Building a decision making agent via scene understanding with iteratively compos
 In this iteration, the use case is geared towards video games but the project has been inspired by robot planning and execution in physical, real-world scenarios.
 
 
-#### Screenshot gets loaded into game state analyzer
-
-![Screenshot gets loaded into game state analyzer](assets/game-state-vid.gif "Screenshot gets loaded into game state analyzer")
-
-#### Decision engine acts on summary of game state
-
-![Decision engine acts on summary of game state](assets/decision-vid.gif "Decision engine acts on summary of game state")
-
-
-
-
 
 ## Overview
 
@@ -29,3 +18,28 @@ This project takes a microservices approach where each microservice is isolated 
 ### Technology Stack & Diagram
 
 Special shoutout to [Langfuse](https://langfuse.com/) and [Openrouter.ai](https://openrouter.ai/) for working with me to update their products so this project could happen.
+
+
+## Install and Run
+1. Clone and navigate to the respository
+2. Run `docker-compose up --build`
+3. Open a browser and head to `localhost:3000/dashboard` to begin
+
+
+## Known Issues (work in progress)
+* Use langfuse's new decorators (which this project helped inspire): https://github.com/orgs/langfuse/discussions/1009#discussioncomment-8682887
+* Iteration on VQA model and prompts for more descriptive output
+* Improved testing and error handling for APIs
+* Add production flag for docker images and front end
+
+
+## Preview in Action
+
+#### Screenshot gets loaded into game state analyzer
+
+![Screenshot gets loaded into game state analyzer](assets/game-state-vid.gif "Screenshot gets loaded into game state analyzer")
+
+#### Decision engine acts on summary of game state
+
+![Decision engine acts on summary of game state](assets/decision-vid.gif "Decision engine acts on summary of game state")
+
