@@ -9,10 +9,10 @@ In this iteration, the use case is geared towards video games but the project ha
 
 This project takes a microservices approach where each microservice is isolated in it's own docker container while providing FastAPI endpoints. 
 
-* **Model Server** - hosts local Hugginface models and also connects to model APIs. Primarily making use of Openrouter.ai, emphasis on interoperability between different models.
-* **Game State** - Uses a more capable LLM (Gemma 7B-it) to iteratively understand the scene with a quick and efficient VQA model (BLIP)
-* **Action Decision** - The decision making engine powered via an LLM (Gemma 7B-it) to build Tree of Thoughts reasoning to determine the next step with self critique.
-* **Frontend** - A simple front end built with NextJS/React to show status of interpreting game state and making a decision
+* **🌐 Model Server** - hosts local Hugginface models and also connects to model APIs. Primarily making use of Openrouter.ai, emphasis on interoperability between different models.
+* **🎮🔍 Game State** - Uses a more capable LLM (Gemma 7B-it) to iteratively understand the scene with a quick and efficient VQA model (BLIP)
+* **⚙️ Action Decision** - The decision making engine powered via an LLM (Gemma 7B-it) to build Tree of Thoughts reasoning to determine the next step with self critique.
+* **🖥️✨ Frontend** - A simple front end built with NextJS/React to show status of interpreting game state and making a decision
 
 
 ### Tech Stack & Diagram
