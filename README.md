@@ -15,7 +15,18 @@ This project takes a microservices approach where each microservice is isolated 
 * **Frontend** - A simple front end built with NextJS/React to show status of interpreting game state and making a decision
 
 
-### Technology Stack & Diagram
+### Tech Stack & Diagram
+![software diagram](assets/software.png)
+* LLMs
+    * BLIP VQA (hosted locally via HF)
+    * GPT2 (hosted locally via HF)
+    * Gemma 2b-it (hosted locally via HF)
+    * Gemma 7b-it (through Openrouter.ai)
+    * Langfuse: observability and prompt engineering
+* Docker / Poetry / Python
+* FastAPI / httpx
+* NextJS 14 / React / TS / TailwindCSS
+
 
 Special shoutout to [Langfuse](https://langfuse.com/) and [Openrouter.ai](https://openrouter.ai/) for working with me to update their products so this project could happen.
 
