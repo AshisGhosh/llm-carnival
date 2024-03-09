@@ -33,8 +33,16 @@ Special shoutout to [Langfuse](https://langfuse.com/) and [Openrouter.ai](https:
 
 ## Install and Run
 1. Clone and navigate to the respository
-2. Run `docker-compose up --build`
-3. Open a browser and head to `localhost:3000/dashboard` to begin
+2. Creat a `.env` file in the `shared` dir with the following entries, visit [langfuse.com](https://www.langfuse.com) and [openrouter.ai](https://www.openrouter.ai) to sign up and generate keys:
+```
+HF_TOKEN_GEMMA=""
+LANGFUSE_SECRET_KEY="" 
+LANGFUSE_PUBLIC_KEY=""
+LANGFUSE_HOST="https://cloud.langfuse.com"
+OPENROUTER_API_KEY=""
+```
+3. Run `docker-compose up --build`
+4. Open a browser and head to `localhost:3000/dashboard` to begin
 
 
 ## Known Issues (work in progress)
